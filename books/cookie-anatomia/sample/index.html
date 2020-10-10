@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>Test DEMO</title>
+
+<style>
+</style>
+
+<h1>Test DEMO</h1>
+
+<h2>apple</2>
+
+<form method=post action=/cart/items>
+  <input type=hidden name=product_id value=1000>
+  <label>個数: <input type=number name=count value=1></label>
+  <button type=submit>カートに追加</button>
+</form>
+
+<script>
+  'use strict';
+  const $  = document.querySelector.bind(document)
+  const $$ = document.querySelectorAll.bind(document)
+  EventTarget.prototype.on = EventTarget.prototype.addEventListener
+
+
+  document.on('DOMContentLoaded', async (e) => {
+    console.log(e)
+
+
+
+  })
+</script>
+
