@@ -13,3 +13,10 @@ summary: |+
 topics: ["origin", "tech", "web"]
 published: true
 price: 1000
+chapters:
+  - 0_intro.md
+  - 1_same-origin-policy.md
+  - 2_cross-origin-resource-sharing.md
+  - 3_sop-bypass.md
+  - 4_related-specs.md
+  - 5_isolation.md
