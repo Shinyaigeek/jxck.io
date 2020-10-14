@@ -46,3 +46,9 @@ fetch や XHR でリクエストを送信したときに、 CORS 違反で失敗
   - バージョニング開始
   - Change Log を追加
 - 2020/10/04: v0.0.0 公開
+
+
+## TODO
+
+- origin isolation の仕様がもう少し固まったら 5 章を更新
+- [CORS and RFC1918](https://wicg.github.io/cors-rfc1918/) がもう少し固まったら 4 章あたりに追記
