@@ -1,12 +1,12 @@
 ---
-title: "Origin 解体新書 v1.2.0"
+title: "Origin 解体新書 v1.3.0"
 emoji: "📝"
 type: "tech"
 topics: ["origin", "web anatomia", "web"]
 published: true
 ---
 
-# Origin 解体新書 v1.2.0
+# Origin 解体新書 v1.3.0
 
 
 ## Intro
@@ -26,6 +26,8 @@ fetch や XHR でリクエストを送信したときに、 CORS 違反で失敗
 
 **zenn は一度買えば常に最新版が見られるため、書い直す必要はありません**
 
+- 2020/10/16: v1.3.0
+  - 画像を更新
 - 2020/10/10: v1.2.0
   - 4 節に Electron などで CORS を無効にするリスクについて追記
   - 4 節の「準拠してない仕様」と「安全にまたぐ仕様」の順番を逆に
