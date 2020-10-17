@@ -490,27 +490,40 @@ Set-Cookie: session_id=YWxpY2U; SameSite=Lax;
 
 安全側に倒す目的で、 Cookie の設定をデフォルトで Lax にするブラウザもある。この場合 Set-Cookie に明示的に SameSite が付与されていなくても自動で Lax と扱われるため、多くの攻撃が未然に防がれる。
 
-一方 Cross Site サイトにも Cookie が自動で送信されていることを前提に作られていたサイトは、壊れてしまう場合がある。
-
-これを防ぐためには、サイトをまたいでも自動で送ってほしい Cookie に対し明示的に None を付与することで、これまでの挙動を維持する。
-
+:::message
+ブラウザが Lax をデフォルトにすると Cross Site サイトにも Cookie が自動で送信されていることを前提に作られていたサイトは、壊れてしまう場合がある。これを防ぐためには、サイトをまたいでも自動で送ってほしい Cookie に対し明示的に None を付与することで、これまでの挙動を維持することも可能だ。
+(この場合 SameSite=None にする条件として Secure の併用を必須とすると言った条件をつけることで、 Cookie の設定をより安全に倒すように制限されているケースがある。)
 
 ```http
 Set-Cookie: session_id=YWxpY2U; SameSite=None;
 ```
 
-以上を踏まえると、今後は基本的に `SameSite=Lax` を前提に開発を行い、それでは満たせない要件が有る場合に、セキュリティリリエスクを踏まえた上で明示的に `SameSite=None` を付与する設計を考慮すると良いだろう。
+しかしこれはあくまで移行のための手段であり、最終的には Lax をデフォルトとして考え、どうしても Cross Site での連携が必要な場合は次節で解説するその他適切な API へと移行していく流れが続くだろう。とくに新規にサービスを作る場合はそれらを意識して設計するべきだ。
+:::
 
 
+### Read Cookie と Write Cookie
 
+`SameSite=Strict` にすれば、 Cross Site な Cookie の送信が一切発生しなくなるため、かなりの安全が期待できる一方、他のページから遷移したときの Session も維持されなくなるため、単純な導入には注意が必要だ。そこで、 RFC6265bis では Strict を導入する際の方法について言及があるので紹介する。
 
+まず、ユーザの操作を "read" と "write" で分け、それぞれの権限が別の Cookie によって付与される構成にする。具体的には POST などによる副作用が発生するもを "write" そうでないものを "read" としてカテゴライズし、それぞれを行うために Cooki も 2 つに分ける。そして "write" Cookie のみ Strict にし、 "read" Cookie については Lax にするというものだ。
 
+```http
+Set-Cookie: read_cookie=cmVhZA;   SameSite=Strict; Path=/; Secure; HttpOnly
+Set-Cookie: write_cookie=d3JpdGU; SameSite=Lax;    Path=/; Secure; HttpOnly
+```
 
+画面遷移やそれに必要なサブリソースの読み込みなどは read cookie のみで行うことができ Lax によって送信されているため Session が切れることはない。`<form>` を用いた POST などは write cookie を必要とし、 `<from>` が SameSite にあるため Strict でも送られる。そして read cookie は有効期限を長く設定し、時間を開けてユーザが戻ってきてもログイン状態を維持する一方、 write cookie は有効期限を短くし、 Cookie が無ければ再度認証を挟むようにすれば、権限操作の前のユーザ確認が実施できるという方法だ。
 
+この方法は安全性は高い一方 Cookie の責務を 2 つにわけるため、 Session Cookie 一つで成り立っていたサイトや、それを前提に作られたフレームワークにも変更が必要になるため、エコシステム側がそれに対応しない限り導入の障壁は多少高いと言えるだろう。一方で、 Lax Cookie が飛ぶ操作に write な操作が入らない作り、つまり副作用の発生する GET などが無い作りであれば、単一の Session Cookie を Lax にするだけでも十分に安全性は向上しているとも言えるだろう。
 
+結果、 SameSite が始まったばかりの現状では、 read/write で Cookie を分ける構成が一般的とは言えず、これが本当に主流になっていくかは判断ができないこと、そしてそこまでする必要がどの程度あるかというリスク評価も定まってないため、筆者としてもこれを推奨構成とする意図は今のところ無く、あくまで紹介に留める。
 
+:::message
+ちなみにだが、 Github は早い段階からこの read/write cookie の分離を実施している。
 
-
+(将来的に OWASP などの推奨になったりすれば、この部分はまた更新したいと思う)
+:::
 
 
 
