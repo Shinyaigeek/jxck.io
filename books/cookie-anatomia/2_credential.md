@@ -385,6 +385,9 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 
 [Origin 解体新書](https://zenn.dev/jxck/books/origin-anatomia) でも解説したように、 Cookie は Same Origin Policy に準拠しておらず、 Origin をまたいだリクエストでも送られる。
 
+
+### CSRF
+
 例えば、 blog.example で付与された Cookie を持ったブラウザは、攻撃者が用意した attacker.example の `<form>` からのリクエストに Cookie を付与してしまう。
 
 
@@ -392,30 +395,49 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 <!-- 攻撃サイト内にある隠し投稿フォーム(簡略) -->
 <form action=https://blog.example/entries method=post>
   <input name=title type=hidden value=${嫌がらせのタイトル}>
-  <input name=title type=hidden value=${嫌がらせの本文}>
+  <input name=body  type=hidden value=${嫌がらせの本文}>
   <button type=submit>今すぐここをクリック!!!</button>
 </form>
 ```
 
-他にも、 Cookie が無いと取得できないページを `<iframe>` で読み込んで、それを Side Channel の Timming 攻撃で推測するのも、そもそも攻撃者のページからのリクエストに Cookie が自動で付与されるからだ。
 
+```http
+POST /entries HTTP/1.1
+Host: example.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 256
+Cookie: session_id=q1w2e3r4t5y6
 
-```html
-<!-- 攻撃者が用意した罠サイト -->
-<title>attacker site</title>
-
-<!-- ユーザを滞在されるためのダミーコンテンツ -->
-<h1>dummy contents</h1>
-
-<!--
-  ユーザの Cookie が送られるため、ユーザのメールボックスが読み込まれる
-  JS で直接アクセスはできないが、内容は同じメモリに展開される
-  この iframe を隠しておき、時間をかけて中身を推測する
--->
-<iframe src=https://mail.example.com></iframe>
+title=${嫌がらせタイトル}&body=${嫌がらせ本文}
 ```
 
-こうした攻撃は、単純に Cookie が攻撃者のページから送られてこなければ、多くのケースで防ぐことができる。この攻撃を防ぐのに利用できるのが SameSite 属性だ。
+
+## Timing 攻撃
+
+次は、 SNS におけるブロック機能を考えてみよう。攻撃者は、 Alice が誰をブロックしているかを調べたいとする。
+
+そこで攻撃者は Alice を以下のような JS を仕込んだサイトに誘導する。
+
+
+```js
+function timing_attack(username) {
+  img = new Image()
+  t1 = performance.now()
+  img.onerror = () => {
+    t2 = performance.now()
+    // block していれば速く
+    // block していなければ遅い
+    console.log(t2-t1)
+  }
+  img.src = `https://sns.example.com/#{username}`
+}
+```
+
+この JS は、 SNS のユーザごとのページを取得し、その取得にかかる時間を調べる。 Alice が SNS にログイン済みであればリクエストには Cookie が付与され、 Alice がブロックしていれば定形画面が返り、ブロックしていなければそのユーザのタイムラインが取得される。
+
+取得結果自体を見ることはできないが、通常ユーザのタイムラインを取得する方が、ブロックの定形画面よりも速いため、ユーザを変えならが取得をすればブロックしているユーザがわかってしまう。これが Timing Attack の基本的な発想だ。 2018 年には、実際に Twitter で発見され[Silhouette(シルエット)攻撃](https://blog.twitter.com/engineering/en_us/topics/insights/2018/twitter_silhouette.html)と呼ばれた。
+
+この攻撃は、 GET によるアクセスのため、 CSRF のように Token を付与することも難しく、ブロックされている場合でも、されていない場合と同程度にレスポンスを遅延させるといった方法でしか対処することが難しい。
 
 
 ### Same Site / Cross Site
