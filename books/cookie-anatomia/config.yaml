@@ -10,4 +10,5 @@ chapters:
   - 1_session.md
   - 2_credential.md
   - 3_secure.md
-  - 4_3rd-party.md
+  - 4_architecture.md
+  - 5_3rd-party.md
