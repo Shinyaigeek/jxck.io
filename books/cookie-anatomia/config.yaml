@@ -5,3 +5,9 @@ summary: |+
 topics: ["cookie", "tech", "web"]
 published: false
 price: 1000
+chapters:
+  - 0_intro.md
+  - 1_session.md
+  - 2_credential.md
+  - 3_secure.md
+  - 4_3rd-party.md
