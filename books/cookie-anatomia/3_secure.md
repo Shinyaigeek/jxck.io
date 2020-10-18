@@ -39,7 +39,7 @@ Set-Cookie: SID=31d4d96e407aad42; Domain=example.com; HttpOnly; Secure;
 
 
 ```
-Set-Cookie: SID=0000000000000000; Domain=exampl.ecom
+Set-Cookie: SID=0000000000000000; Domain=example.com
 ```
 
 つまりこれでは、 sns.example.com は、ブラウザが送ってきたものが、自分が設定した Cookie であることを保証することができない。

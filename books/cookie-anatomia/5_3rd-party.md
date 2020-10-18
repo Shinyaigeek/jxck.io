@@ -159,7 +159,7 @@ Location: https://kintai.example.com/?session_id=deadbeef
 
 すると、 kintai はクエリに有る session_id から認証済みであることを知り、ログインさせる。
 
-ユーザとしては、 kintaini アクセスしたら二回リダイレクトが発生しただけでログイン済みとなった形になる。
+ユーザとしては、 kintai にアクセスしたら二回リダイレクトが発生しただけでログイン済みとなった形になる。
 
 もちろん kintai は自分のための 1st Party Cookie を付与することで次回からのアクセスもログイン済みにできる。
 
