@@ -58,6 +58,30 @@ NIST(National Institute of Standards and Technology) は、アメリカで多岐
 :::
 
 
+## Cookie にまつわる攻撃
+
+適切な Session ID を生成できれば、それを Cookie に付与すれば Seasion が維持できる。
+
+```http
+Set-Cookie: session_id=TODO
+```
+
+そしてこの値は攻撃者の手に渡れば、攻撃者は Session を盗む(Session Hijacking)ことができることを意味するため、サービスにおいて Session 機能を提供するのであれば、この Session ID は死守しなければならない。
+
+攻撃者が Session Hijack を成立させるには、大別して二つの方法が考えられる。
+
+- なんらかの方法で正規の Cookie を盗み出す
+- なんらかの方法で偽装した Cookie を埋め込み(Cookie Injection)それを Session に紐づける(Session Fixation)
+
+前者は、盗み出せた時点で Session Hijack が成功している。後者は Cookie Injection が成立したらすぐに Session Hijack に繋がるとは限らず、それを Session ID として正当化する Session Fixation が成立すると Session Hijack が成功するというイメージだ。
+
+また Cookie Injection は、 Session ID 以外の Cookie が存在した場合、そこにも直接的な影響がある。例えば、前節の 「Cookie を用いたカート実装」をしていた場合、 Cookie Injection によってカート自体を改竄し、意図しない買い物をさせることもできるかもしれない。
+
+以上のことを踏まえた上で、 Cookie の適切な扱いを解説するとともに、「Cookie が本来いかに信用ならないものなのか」をみていこう。
+
+
+
+
 ## Session ID 付与のタイミング
 
 前節で解説した通り、 EC サイトなどではログインする前からカートに商品を追加でき、決済の直前でユーザ認証が行われるようなフローがよくある。
@@ -94,7 +118,7 @@ username=alice&password=xxxxxxxx
 
 ### Session Fixation 攻撃
 
-もし Alice が送ってきた session_id が、サーバによって付与されたものではなく、悪意のある攻撃者によって Alice のクライアントに埋め込まれた値だったらどうなるだろうか?
+もし Alice が送ってきた session_id が、サーバによって付与されたものではなく、悪意のある攻撃者によって Alice のクライアントに埋め込まれた値だったら、つまり Cookie Injection 成立していたらどうなるだろうか?
 
 まず攻撃者は、サービスにアクセスし session_id を受け取る。
 
@@ -132,7 +156,7 @@ Host: example.com
 Cookie: session_id=YXR0YWNrZXI
 ```
 
-このように、攻撃者の指定した Cookie にアカウントを紐付けさせるこの攻撃を **Session Fixation 攻撃** と呼ぶ。
+このように、攻撃者により Inject された Cookie にアカウントを紐付けさせるこの攻撃を **Session Fixation 攻撃** と呼ぶ。
 
 
 ### Session Fixation 対策
@@ -141,12 +165,12 @@ Session Fixation 攻撃への対策は知られており、「 **認証が終わ
 
 しかし、それだけでは認証する前の Seasion Fixation は防げず、 Alice がカートに追加した内容は攻撃者に見えてしまう。もし認証前でもカートへの追加を許可し、それを Session Fixation から守るには、カートに追加するたびに Session ID を再生成するといった方法が考えられる。しかし、個人情報などを扱う前には必ず認証を挟むことが推奨され、カートへの追加も認証後でないとできないようにしている EC サイトもある。
 
-「Alice のクライアントに任意の Cookie を保存するなんてできるのか?」と思うかもしれないが、それがどう可能かは後ほど解説する。先に言っておきたいのは(近年は昔よりは良くなりつつ有るが) Session Fixation を完璧に防ぐことは簡単ではないこと、もっと言えば **クライアントが送ってくる Cookie は基本的には信用ならない** ということだ。
+「Alice のクライアントに任意の Cookie を保存するなんてできるのか?」と思うかもしれないが、それがどう可能かは後ほど解説する。先に言っておきたいのは(近年は昔よりは良くなりつつ有るが) Cookie Injection を完璧に防ぐことは簡単ではないこと、もっと言えば **クライアントが送ってくる Cookie は基本的には信用ならない** ということだ。よって Cookie Injection が起こっても、 Session Fixation につながらなように対策することが必要だ。
+
 
 OWASP のガイドでは、「権限レベルが変わったら」 Session ID を再生成すべきといった書き方をしているが、わかりやすく言うなら、サービスを作る中で「ここから先ユーザが処理を進めたとき、もし Session Fixation が発生していたらまずいな」と思う場面では再度認証をはさみ、そのタイミングで Session Cookie を再生成しておくと良いだろう。大手のサービスで重要な操作(パスワーの変更 etc)の前に再度認証を挟む実装をよく見ると思う、どこで認証を挟んでいるかに注目してみると参考になるだろう。
 
 
-TODO: Session Fixation は Cookie Injection の一つの結果。 Cookie が Session ID でなければそれ自体の問題ももっと増える。対策は Cookie Injection が起きないようにする、と、 Cookie Injection が起きても Session Fixation に繋がらないようにする。の二つで考える。
 
 :::message alert
 Cookie はサーバが付与し、サーバが知らない Cookie を勝手に送っても無視される、と普通なら思うだろう。驚くことに、世の中には「クライアントが送ってきた Cookie でサーバが知らない値でも、それをその後の Session ID として使ってしまう」という実装が存在することが知られている(Session Adoption)。
@@ -244,9 +268,9 @@ Set-Cookie: session_id=bad-cookie; Path=/alice;
 Cookie: session_id=bad-cookie
 ```
 
-Bob は、 Alice のサービスのユーザに任意の Cookie を埋め込むことができた。 Path 属性は「どこに送るのか」を制限するだけなのでこの攻撃に無力だ。 Cookie はそもそも「 **どの Path で付与されたか** 」という情報は持たないため、 Alice はそれが「 **確かに自分が付与したものか、攻撃者に埋め込まれたものか** 」を判断できないのだ。
+Bob は、 Alice のサービスのユーザに任意の Cookie を埋め込む Cookie Injection を成立することができた。 Path 属性は「どこに送るのか」を制限するだけなのでこの攻撃に無力だ。 Cookie はそもそも「 **どの Path で付与されたか** 」という情報は持たないため、 Alice はそれが「 **確かに自分が付与したものか、攻撃者に埋め込まれたものか** 」を判断できないのだ。
 
-この session_id を Alice のサービスが認証後も継続して使ってしまうと、そこで先ほど説明した Session Fixation が成立してしまう。
+Cookie に Seasion ID ではなく直接的な値があれば、それをそのまま改竄できる。session_id の場合は、 Inject されたものを Alice のサービスが認証後も継続して使ってしまうと、そこで Session Fixation が成立してしまう。
 
 つまり、「 **Cookie において Path は Origin のようなセキュリティの境界にはなりえない** 」ため、 Path ごとに Credential が別になる(つまり認証が違う)サービスを同居する構成はとってはならないのだ。
 
@@ -299,7 +323,7 @@ Set-Cookie: session_id=YWxpY2U; Path=/; Domain=example.com
 
 すると、この Cookie は bob.example.com にも送信されてしまうため、 Session ID の漏洩が発生し、 Bob は Alice のサービス利用者になりすますことができてしまう。
 
-さらに Alice が Domain 属性をつけていなかったとしても、 Bob は以下のようなレスポンスを Alice のユーザに返すことができる。
+さらに Alice が Domain 属性をつけていなかったとしても、 Bob は以下のようなレスポンスを Alice のユーザに返すことで、 Cookie Injection を行うことができる。
 
 
 ```http
@@ -386,7 +410,7 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 [Origin 解体新書](https://zenn.dev/jxck/books/origin-anatomia) でも解説したように、 Cookie は Same Origin Policy に準拠しておらず、 Origin をまたいだリクエストでも送られる。
 
 
-### CSRF
+### CSRF 攻撃
 
 例えば、 blog.example で付与された Cookie を持ったブラウザは、攻撃者が用意した attacker.example の `<form>` からのリクエストに Cookie を付与してしまう。
 
@@ -446,6 +470,9 @@ SameSite 属性は、「異なる Site へのリクエストに Cookie を付与
 
 なぜ SameOrigin 属性じゃないかと言うと、ここまで解説したように Cookie は Origin の概念が生まれる前からあり、 Domain の設定によってサブドメインにも送られるような仕様になっている。また、 Scheme や Port にも縛られていないため、 http ページから https ページへのリクエストや、他の Port へのリクエストにも付与される。
 
+TODO: Cookie が Origin に閉じないこと別途節立てするか
+
+
 そこで、従来 Cookie に設定できた範囲を括る Site という概念を定義し、その Site が同じであれば送られるといった仕様を追加したのだ。 Site は先に解説した eTLD+1 を基本とし、そのサブドメインを Scheme / Port を無視してくくる。
 
 例えば、 https://example.com に対して以下は全て SameSite だ。
@@ -457,9 +484,7 @@ SameSite 属性は、「異なる Site へのリクエストに Cookie を付与
 
 それ以外を CrossSite と呼ぶ。
 
-
-
-
+TODO: schemeful same site
 
 
 ### SameSite 属性
@@ -477,7 +502,11 @@ SameSite 属性には 3 つの値がある。
 Set-Cookie: session_id=YWxpY2U; SameSite=Strict;
 ```
 
-この設定ならば CSRF や Timing Attack の発生は、ほとんど防ぐことができる。(もちろん攻撃者が SameSite なページに攻撃を仕込める場合は別だが、大抵そうした攻撃は Cross Site からくる)
+この設定ならば CSRF 攻撃や Timing 攻撃の発生は、ほとんど防ぐことができる。
+
+:::message alert
+大抵そうした攻撃は、攻撃者の用意した Cross Site なページから来るため効果があると言っているのであって、もし攻撃者が XSS やその他サイト改竄を組み合わせて SameSite なページに攻撃を仕込める場合は別だ。基本的には自身がコントロールできない CrossSite からの攻撃を防ぐ手段であり、自身のコントロール下にある SameSite に脆弱性がある場合は、それを治す以上の対策は無い。
+:::
 
 しかし session_id にこれをつけてしまうと、例えば alice.example から bob.example への「 **ページ遷移** (Top Level Navigation)」でも Cookie が付与されなくなるため、ログインしてないとみなされてしまう。そして、そのページでリロードするだけで Cookie が付与されログイン状態になるという変な挙動になる。
 
@@ -536,12 +565,12 @@ Set-Cookie: write_cookie=d3JpdGU; SameSite=Lax;    Path=/; Secure; HttpOnly
 
 ### HTTPS 化による Credential の保護
 
-前節で解説したように、 Credential としての Cookie が盗まれると、なりすましなどが成立する可能性がある。そして、 Person in the Middle などの攻撃が成立した場合、平文の HTTP 通信は簡単に盗聴されてしまう。したがって、 Cookie を用いた通信は暗号化するべだと言える。
+前節で解説したように、 Credential としての Cookie が盗まれると、Session Hijacking が成立する可能性がある。そして、 Person in the Middle などの攻撃が成立した場合、平文の HTTP 通信は簡単に盗聴されてしまう。したがって、 Cookie を用いた通信は暗号化するべだと言える。
 
 現在のように HTTP Everywhere が普及する前は「パスワードを送信するページだけ暗号化する」などというポリシーがまかり通っていた時代があるが、パスワードだけを暗号化しても、その後アカウントが紐付いた Session ID が盗まれれば被害は防げない。基本的には全ての URL を暗号化するのが前提だ。
 
 :::message alert
-現在、全てのページを暗号化すべき(HTTP Everywhere) と言われているのは、「Session ID を保護するため」という理由だけではなく、それは理由の一部にすぎないという点には注意したい。ではなぜ全部暗号化するのか、については別途解説したいと思っている。
+現在、全てのページを暗号化すべき(HTTP Everywhere) と言われているのは、「Session ID を保護するため」という理由だけではなく、それは理由の一部にすぎないという点には注意したい。ではなぜ全部暗号化するのかについては、別途解説したい。
 :::
 
 
@@ -595,7 +624,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 これにより、サービスとの通信が暗号化され、 Cookie の暗号化された経路でしか送られなくなる。
 
 
-### 
+### Secure Cookie の Injection
 
 しかし、`Secure` 属性をつければ終わりかと言うとそうではない。攻撃者は、盗聴によって Cookie を盗むことができなくても、改ざんすることは不可能ではない。
 
@@ -626,7 +655,7 @@ Cookie: session_id=bad-cookie; Path=/; Secure;
 
 ブラウザはこの Cookie をそのままリダイレクト後にサーバに送ってしまう。ため、ここでも Session Fixation が発生する可能性があるのだ。 Cookie ヘッダは `http://` と `https://` どちらで付与されたかという情報を持たないため、サーバはこれが自分で付与した正規のものなのか、改ざんされた Cookie なのかを見分けることはできない。
 
-この攻撃に対する根本的な対策は、サービスが `http://` での通信を一切しないことになってしまう。しかし、そこで 80 ポートを閉じて `http://` を一切受け付け内容にサーバを設定しても、 Person in the Middle が発生していれば、攻撃者はサーバを介さずに攻撃者と被害者の間で平文通信を擬似的に行うことができてしまうため、それも対策にならない。
+この攻撃に対する根本的な対策は、サービスが `http://` での通信を一切しないことになってしまう。しかし、そこで 80 ポートを閉じて `http://` を一切受け付け無いようにサーバを設定しても、 Person in the Middle が発生していれば、攻撃者はサーバを介さずに攻撃者と被害者の間で平文通信を擬似的に行うことができてしまうため、それも対策にならない。
 
 もう一つの対策は [Preload HSTS](https://hstspreload.org/) だ。通常 HSTS は、最初の平文通信をリダイレクトする必要があるが、「ブラウザが最初からこのサーバは HSTS に対応している」と知っていれば、ユーザが仮に `http://` なリンクを踏んだり、直接 URL バーに `http://` な URL を入力したりしても、ブラウザが勝手に `https://` に切り替えることができる。そこで、ブラウザに対して「このドメインは `https://` に対応している」ということを事前に登録する仕組みが Preload HSTS だ。これなら Person in the Middle が発生していても、ブラウザは平文通信をしなくなるため攻撃の成立が難しくなるだろう。
 
@@ -700,44 +729,43 @@ Cookie には有効期限があり、クライアントがその Cookie をい�
 Set-Cookie: session_id=YWxpY2U; Path=/; Max-Age=2592000
 ```
 
-先程の Set-Cookie はこの指定がないが、その場合 Cookie はブラウザが閉じると消えるという挙動になる。なお、昔は今と違い用が済むとブラウザをいちいち閉じていたため、ブラウザが閉じるまでをセッションと呼び、そこから仕様では有効期限を指定しない Cookie を、 Session Cookie と呼ぶ。
+しかし、他のサイトの Cookie が増えていき、ブラウザに保存できる限界を超えると古いものから消されることがあるため、**指定した時間確実に残ることは保証されるわけではない** という点には注意したい。
 
-現在では、ブラウザを閉じても明示的にログアウトしなければセッションは維持されて欲しいため、 session_id には長い期間を指定するのが普通だ。しかし、他のサイトの Cookie が増えていき、ブラウザに保存できる限界を超えると古いものから消されることがあるため、指定した時間確実に残ることは保証されない。通常一年以上を指定する意味はないだろう。
+通常、長期の保存を意図しても一年以上を指定する意味はないだろう。また、 session_id は長くしすぎると攻撃が発生している場合の影響が拡大していく可能性があるため、3ヶ月や1週間などにし、頻繁に利用していればSession は維持され続けるが、連続して使わない日々が一定期間続くと、再訪時に認証を求めるといった実装が一般的だろう。
 
-また、かつては Expire 属性に日付を指定し、そこまで有効にするという指定方法があった。
+Session Cookie の起源を長くする時、最も恐るべきリスクは、「実は攻撃者が session_id の盗み出しに成功しており、別でログインしてユーザの行動をひっそりと見ている」という状況だろう。そこで Session を維持する中でも session_id の値を定期的に更新したり、重要な情報へのアクセスには再度認証を強制するなどの対策が考えられる。また Session オブジェクトの中に認証時の IP アドレスや User-Agent を保存しておき、アクセスしてきた環境があまりにも違ったら、認証などで確認を促すサイトもあるだろう。意図した Cookie が、意図したブラウザから、意図した通りに送られているかは、常に疑うくらいでもおかしくは無いと筆者は考えている。
+
+TODO: (NIST に cookie 期限あったっけ？)
+
+
+:::details ブラウザを閉じると消える cookie
+Max-Age の無い Set-Cookie の場合 Cookie はブラウザが閉じると消えるという挙動になる。
+
+今ではブラウザが立ち上げっぱなしの人も多いだろうが、昔は今と違い、用が済むとブラウザをいちいち閉じたり、さらには PC をオフにするのが一般的だった。この「ブラウザが閉じる」ことをセッション終了と考え、そこで消える有効期限を指定しない Cookie を、 Session Cookie と呼ぶことがあった。それはここまで解説してきた Session Cookie と意味が違うためややこしい。
+
+現在では、多くのサービスが明示的にログアウトするか長期間使用しない状態が続くまではセッションを維持し、ブラウザを閉じるたびにログアウトするなどと言ったことはしないだろう。つまり、少なくとも session_id には Max-Age を指定するのが一般であり、その期間をコントロールする実装が通常だ。以降「ブラウザを閉じたら消える」意味での Session Cookie は解説には出てこない。
+:::
+
+
+
+また、かつては Max-Age ではなく Expire 属性に日付を指定し、そこまでの期間を有効にするという指定方法があった。
 
 
 ```http
-Set-Cookie: session_id=YWxpY2U; Path=/; Expires=Sun, 02 Feb 2020 02:02:02 GMT
+Set-Cookie: session_id=YWxpY2U; Expires=Sun, 02 Feb 2020 02:02:02 GMT
 ```
 
-しかし、 Expires は保存している OS の時間を元に計算されるため、 OS の時間設定をずらすことでごまかすことができるため、改善のために Max-Age が定義された。現在のブラウザのほとんどは Max-Age に対応しているが、対応していないブラウザのために両方送るサービスもある。
+しかし、 Expires は保存している OS の時間を元に計算されるため、 OS の時間設定をずらすことでごまかすことができてしまう。これに起因する攻撃をふせぐためには「絶対時間指定」ではなく「相対時間指定」であり、ブラウザが受信した時点からの経過時間で管理できるほうが望ましいとして、 Max-Age が提案された。[^3]
 
+[^3]: 同じことは、ブラウザキャッシュをコントロールする Expires ヘッダから Cache-Control ヘッダへの max-age 属性の追加でも行われている。
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+現在のブラウザのほとんどは Max-Age に対応しているが、対応していないブラウザのために両方送るサービスもある。 Expires にしか対応してないブラウザに Max-Age だけを送った場合は、期限を指定してない Cookie としてブラウザを閉じたら消えるだろうと予想される。
 
 
 
 ## Cookie Prefixes
 
-ここまで何度か解説したように、 Cookie は別のドメインやパス、  `http://` 通信などによって書き換えられている可能性が常にある。そして Cookie ヘッダにはどのような属性で保存された値なのかという情報が一切ない。
+ここまで何度か解説したように、 Cookie は別のドメインやパスからの Injection や、平文通信の改竄などによって書き換えられている可能性が常にある。そして Cookie ヘッダにはどのような属性で保存された値なのかという情報が一切ない。
 
 
 ```http
@@ -750,6 +778,8 @@ Set-Cookie: session_id=YWxpY2U;
 # どちらも同じ Cookie ヘッダで送られる
 Cookie: session_id=YWxpY2U
 ```
+
+TODO: Cookie ヘッダに属性を付与してるサンプルが無いかチェック
 
 保存されている属性の値も一緒に送られてくれば確認できるが、今更 Cookie ヘッダの仕様を変えるわけにはいかない。そこで提案されたのが Cookie Prefix という仕様だ。
 
@@ -778,7 +808,7 @@ Set-Cookie: __Host-session_id=YWxpY2U; Secure; Path=/;
 
 送られてくる Cookie は、 `http://` 通信で送られたり、サブドメインに送られてないことが保証でき、まさしく session_id の用途に利用できる。
 
-ブラウザが対応していない場合は、単にそういうヘッダ名な Cookie として扱われるだけなので、互換を壊さないため、導入の敷居は低く、改竄に対する対策に利用することができる。
+ブラウザが対応していない場合は、単にそういうヘッダ名な Cookie として扱われるだけなので、互換を壊さないため、導入の敷居は低く改竄に対する対策に利用することができる。
 
 
 ## Cookie の削除と Clear-Site-Data
