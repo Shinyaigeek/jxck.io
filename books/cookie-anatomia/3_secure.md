@@ -2,7 +2,7 @@
 title: "Cookie の挙動の注意点"
 emoji: "📝"
 type: "tech"
-topics: ["", ""]
+topics: ["cookie", "web"]
 published: false
 ---
 

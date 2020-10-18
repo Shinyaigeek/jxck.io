@@ -2,7 +2,7 @@
 title: "Cookie の属性と適切な処理"
 emoji: "📝"
 type: "tech"
-topics: ["cookie", "web"]
+topics: ["credential", cookie", "web"]
 published: false
 ---
 

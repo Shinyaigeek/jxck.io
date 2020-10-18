@@ -2,7 +2,7 @@
 title: "Session ID と Credential"
 emoji: "📝"
 type: "tech"
-topics: ["cookie", "web"]
+topics: ["session", "cookie", "web"]
 published: false
 ---
 

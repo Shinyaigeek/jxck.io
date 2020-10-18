@@ -2,7 +2,7 @@
 title: "3rd Party Cookie とは何か"
 emoji: "📝"
 type: "tech"
-topics: ["cookie", "web"]
+topics: ["3rd party", "cookie", "web"]
 published: false
 ---
 

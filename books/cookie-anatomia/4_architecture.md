@@ -2,7 +2,7 @@
 title: "Cookie の Architecture"
 emoji: "📝"
 type: "tech"
-topics: ["", ""]
+topics: ["architecture", "cookie", "web"]
 published: false
 ---
 
