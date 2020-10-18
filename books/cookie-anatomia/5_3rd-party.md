@@ -165,4 +165,8 @@ Location: https://kintai.example.com/?session_id=deadbeef
 ## 3rd Party Cookie
 
 
-## ITP
+## ITP / ETP
+
+
+
+## GDPR
