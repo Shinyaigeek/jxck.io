@@ -602,7 +602,7 @@ Location: https://example.com
 # https リクエスト
 GET / HTTP/1.1
 Host: example.com
-Cookie: session_id=YWxpY2U; Path=/; Secure;
+Cookie: session_id=YWxpY2U
 ```
 
 
@@ -641,7 +641,7 @@ Set-Cookie: session_id=bad-cookie; Path=/; Secure;
 # https リクエスト
 GET / HTTP/1.1
 Host: example.com
-Cookie: session_id=bad-cookie; Path=/; Secure;
+Cookie: session_id=bad-cookie
 ```
 
 ブラウザはこの Cookie をそのままリダイレクト後にサーバに送ってしまう。ため、ここでも Session Fixation が発生する可能性があるのだ。 Cookie ヘッダは `http://` と `https://` どちらで付与されたかという情報を持たないため、サーバはこれが自分で付与した正規のものなのか、改ざんされた Cookie なのかを見分けることはできない。
@@ -803,7 +803,7 @@ Set-Cookie: __Host-session_id=YWxpY2U; Secure; Path=/;
 Cookie の削除には、長らく明示的な API がなかったが。そこで、消したい Cookie の値を空にしつつ有効期限切れにするという方法がとられる。 session_id の場合は削除がセッションの終了になるため、ログアウト処理などで行われる。
 
 
-```
+```http
 Set-Cookie: session_id= Max-Age=0;
 ```
 

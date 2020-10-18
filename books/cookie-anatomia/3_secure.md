@@ -31,14 +31,14 @@ Scheme による分離もされないため、多くは http/https だが、他�
 sns.example.com が自身が利用する Cookie を以下のように付与したとする。
 
 
-```
+```http
 Set-Cookie: SID=31d4d96e407aad42; Domain=example.com; HttpOnly; Secure;
 ```
 
 これは同じ Domain の範囲にある attack.example.com にも送られる。さらに、 attack.example.com が以下のように送れば、その内容を上書きすることも可能だ。ここでは SID を書き換え、 HttpOnly, Secure を消している。
 
 
-```
+```http
 Set-Cookie: SID=0000000000000000; Domain=example.com
 ```
 
