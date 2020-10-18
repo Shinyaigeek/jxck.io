@@ -17,11 +17,9 @@ published: false
 
 
 ```html
-<body>
 <h1>1st Party</h1>
 <p>this is 1st party content</p>
 <iframe src=https://ad.example></frame>
-</body>
 ```
 
 このとき 3rd Party のレスポンスが以下のようになっていたとする。
@@ -33,7 +31,7 @@ Content-Length: 100
 Content-Type: text/html
 Set-Cookie: id=deadbeef
 
-/// contents
+<!doctype html>
 ```
 
 ここで返ってきた Cookie は、 https://ad.example に紐づけてブラウザに保存される。
@@ -50,11 +48,9 @@ Set-Cookie: id=deadbeef
 
 
 ```html
-<body>
 <h1>「タオル」の検索結果</h1>
 <p>おすすめタオル一覧</p>
 <iframe src=https://ad.example/keyword?q=towel></frame>
-</body>
 ```
 
 この iframe によって、すでに `Set-Cookie: deadbeef` を受け取っていれば、この `iframe` へのリクエストは以下のようになるだろう。
@@ -62,8 +58,8 @@ Set-Cookie: id=deadbeef
 
 ```http
 GET /keyword?q=towel
+Host: ad.example
 Cookie: id=deadbeef
-
 ```
 
 これにより、広告配信元は `deadbeef` を保存したブラウザは、 `towel` をキーワードとして検索したことがあることを知ることができる。
@@ -112,20 +108,18 @@ Location: https://account.example.jp&from=https://portals.example
 その URL には、認証済みである情報を付与しておく。この情報はセッション ID などと呼ばれることが多い。
 
 
-```
+```http
 303 See Other HTTP/1.1
 Set-Cookie: session_id=deadbeef
 Location: https://portals.example/?session_id=deadbeef
-
 ```
 
 すると、 https://portals.example はクエリパラメータに付与された情報から、共通認証による認証が済んでいることを判断し、ログインさせる。このセッション ID を 1st Party Cookie として付与すれば、次にアクセスしたときは Cookie があるためログイン済みとなる。
 
 
-```
-200 OK
+```http
+200 OK HTTP/1.1
 Set-Cookie: session_id=deadbeef
-
 ```
 
 さて、ここまででユーザは account と portals に Cookie を持っている状態になった。
@@ -137,11 +131,10 @@ Set-Cookie: session_id=deadbeef
 ところが、今回は account.example.jp への Cookie はすでにあるため、それが送られることになる。
 
 
-```
+```http
 302 Found HTTP/1.1
 Location: https://account.example.jp&from=https://portals.example
 Cookie: session_id=deadbeef
-
 ```
 
 すると、 account.example.jp には認証済みとわかるため、ログイン画面は出ずにそのまま kintai へリダイレクトされる。
@@ -151,10 +144,9 @@ Cookie: session_id=deadbeef
 そして、 kintai に対して認証済みであることを知らせるために URL のクエリには session_id つける。
 
 
-```
+```http
 303 See Other HTTP/1.1
 Location: https://kintai.example.com/?session_id=deadbeef
-
 ```
 
 すると、 kintai はクエリに有る session_id から認証済みであることを知り、ログインさせる。

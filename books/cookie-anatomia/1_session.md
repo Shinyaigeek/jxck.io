@@ -46,7 +46,7 @@ product_id=1000&count=1
 
 例えば複数のユーザが同時に買い物をしているなら、カートはユーザごとに分ける必要があるが、リクエストだけを見ても誰がカートに入れようとしているのかを **区別** できないのだ。
 
-![TODO](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-33EAD.png)
+![複数のユーザがいるためリクエストを区別できずカートが実装できない](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-33EAD.png)
 
 
 ```http
@@ -99,7 +99,7 @@ product_id=1000&count=1
 
 付与する ID をユーザごとに変えておけば、ユーザを区別できるため、 ID ごとにカートをサーバに確保すれば、適切なカートに商品を追加することができるのだ。
 
-![TODO](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-25199.png)
+![ID を付与することでユーザを区別でき、適切なカートに商品が追加できる](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-25199.png)
 
 
 ### ユーザの識別
@@ -142,9 +142,9 @@ Set-Cookie: alice
 Cookie: bob
 ```
 
-あくまで Cookie には、他のユーザと区別できるよう一意で、推測できないランダムな値(Nonce)を付与し、サーバ側でその値に対してユーザアカウントを紐付けるというのが一般的な実装だ。
+あくまで Cookie には、他のユーザと区別できるよう、一意で推測できないランダムな値(Nonce)を付与し、サーバ側でその値に対してユーザアカウントを紐付けるというのが一般的な実装だ。
 
-![TODO](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-3F374.png)
+![session_id にアカウントを紐付けユーザを識別できる](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-3F374.png)
 
 
 ## Session とは何か
@@ -385,7 +385,7 @@ Set-Cookie: session_id=YWxpY2U
 
 この時点でサーバには Session ID に紐付けた保存領域を確保し、そのセッションの中で必要な情報を保存する。今回はカートの情報がここに入るが、実際はカート以外に色々なものを入れる。
 
-![TODO: 図4](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-609BB.png)
+![session_id に紐付けた Session オブジェクトを確保し、そこにアカウントやカートなどの情報を紐付ける](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-609BB.png)
 
 ユーザがカートに追加するとそのリクエストは以下のようになる。何個追加してもその時追加した商品の情報だけを送れば良い、以前追加したものはサーバに保存されているからだ。
 
@@ -447,7 +447,7 @@ HTTP の仕様は [RFC7231](https://tools.ietf.org/html/rfc7231) に定義され
 
 > This document defines the HTTP Cookie and Set-Cookie header fields.  These header fields can be used by HTTP servers to store state (called cookies) at HTTP user agents, letting the servers maintain a stateful session over the mostly stateless HTTP protocol.
 
-HTTP は本来は GET で文書を取得して終わりだったため Stateless で良かったが、 `<form>` から POST をし始めチャットなどができるようになった。すると毎回チャットにユーザ名やメールアドレスを入れないで済むように、それらを保存できるように Cookie が作られたのが始まりと聞いたことがある。 RFC の冒頭からも Stateless だった HTTP と、そこに Stateful をCookie が持ち込んだという構図が読み取れるだろう。
+HTTP は本来は GET で文書を取得して終わりだったため Stateless で良かったが、 `<form>` から POST をし始めチャットなどができるようになった。すると毎回チャットにユーザ名やメールアドレスを入れないで済むように、それらを保存できるように Cookie が作られたのが始まりと聞いたことがある。 RFC の冒頭からも Stateless だった HTTP と、そこに Stateful を Cookie が持ち込んだという構図が読み取れるだろう。
 :::
 
 
@@ -517,7 +517,7 @@ app.get('/', (req, res) => {
 
 しかし、これらはまたブラウザを変えると設定が共有されないため、様々な端末を使い分けることが一般的な現代では、こうした設定もアカウントに紐づけて Session に保存することが多いのも事実だ。
 
-さらに、 SPA のように JS で画面を構築することが増えると、こうした設定情報も JS から触れる方が良い、その場合は Cookie ではなく localStorage などに入れる方が便利だ。
+さらに、 SPA のように JS で画面を構築することが増えると、こうした設定情報も JS から触れる方が良い、その場合は Cookie ではなく LocalStorage などに入れる方が便利だ。
 
 いずれにせよ、最近では Cookie には session_id 相当のものを入れることが多くなり、利便性のために Session にある情報の一部をコピーして Cookie に付与するといった実装が多いだろう。
 
@@ -530,7 +530,7 @@ app.get('/', (req, res) => {
 
 つまり、この session_id をなんとか盗み出し、それを自分のリクエストに付与して送ることができれば、だれでも Alice になりすましてサービスにアクセスすることが可能なのだ。
 
-![TODO 図5](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-F1F5A.png)
+![Alice の session_id を盗み出した攻撃者が Alice に成り済ます](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-F1F5A.png)
 
 このことから、現状では Cookie は Credential (ユーザの資格情報)と呼ばれ、機密情報として扱われる。もし lang や theme などだけなら単体で漏洩しても成り済ますまではできないが(それでも個人情報漏洩の可能性はある)、前述の通り最近ではそうした設定値よりも Session ID としての利用が支配的であるため、 Cookie は Credential であり絶対に死守しないといけない情報なのだ。
 

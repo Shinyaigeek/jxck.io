@@ -39,7 +39,7 @@ HTTP の Cookie の仕様はあくまで Cookie の挙動を定義したもの�
 - 一意性の担保
 - etc
 
-逆を言うとこうした要件を満たさない、短くて推測が容易な値を使ってしまうと、攻撃者が総当りで Cookie を付与したリクエストを送り(Bruteforce Attack)、たまたま本物に行き当たることで、その Session を盗む(Session Hijack)ことができてしまう。
+逆を言うとこうした要件を満たさない、短くて推測が容易な値を使ってしまうと、攻撃者が総当りで Cookie を付与したリクエストを送り(Brute Force Attack)、たまたま本物に行き当たることで、その Session を盗む(Session Hijack)ことができてしまう。
 
 しかし、通常 Session ID は開発者が自分で生成するのではなく、フレームワークなどが適切な値を生成し、多くの場合は自動で付与する作りになっているだろう。そうした信頼できる実装に管理を任せ、自分で生成ロジックを考えて実装するといったことは基本的にするべきではない。
 
@@ -307,9 +307,9 @@ Set-Cookie: session_id=YWxpY2U; Path=/; Domain=example.com
 
 ### Domain 属性の注意点
 
-今度は、 example.com 以下の alice.example.com に Alice が管理するサービス、 bob.example.com に Bob が管理するサービスがデプロイされ、それぞれが認証を提供するような構成を考える。
+今度は、 example.com 以下の alice に Alice が管理するサービス、 bob.example.com に Bob が管理するサービスがデプロイされ、それぞれが認証を提供するような構成を考える。
 
-alice.example.com で認証したレスポンスで以下の Set-Cookie が返ってきたとしよう。
+alice で認証したレスポンスで以下の Set-Cookie が返ってきたとしよう。
 
 
 ```http
@@ -347,7 +347,7 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 :::
 
 
-## Registrable Doamin と Public Suffix List
+## Registrable Domain と Public Suffix List
 
 `Domain=example.co.jp` とすると example.co.jp のサブドメインに Cookie が送られるという解説をしたが、ここで `Domain=co.jp` と指定したとしても *.co.jp に送られるわけがないと思うだろう。しかし、実は似たようなことが実際に発生したことがある。
 
@@ -356,7 +356,7 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 単なる IE のバグだと考えればそれでもいいが、そもそもなぜこうしたことが起こったのかは、そもそもの「Domain」というものが、どう定義されどう運用されているかを一度知っておくと良いだろう。その考え方は今後も重要になる。
 
 
-### Top Level Domain と Registrable Domain
+### TLD と Registrable Domain
 
 例えば `.jp` について考えてみよう、 `.jp` は Top Level Domain (TLD) と呼ばれ、我々は `.jp` のサブドメインにあたる部分をドメインレジストラから購入することができる。ここでは例示ドメインだとややこしいので `${好きな単語}.jp` のようなイメージで考えて欲しい。そして、この購入できるドメインを Registrable Domain という。
 
@@ -365,7 +365,7 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 都道府県型 JP ドメインを考えると、 `${好きな単語}.jp` は取得できるが、 `tokyo.jp` は取得できず、 `${好きな単語}.tokyo.jp` は取得できる。これは `tokyo.jp` をレジストラがそう運用しているからという、仕様ではなく運用の都合なのだ。
 
 
-### Effective Top Level Domain と Public Suffix List
+### eTLD と Public Suffix List
 
 これはつまり、 `tokyo.jp` はまるでその組み合わせを Top Level Domain のような扱いをしないといけないことを意味する。そうしたドメインの組み合わせを Effective Top Level Domain (eTLD) と呼ぶ。
 
@@ -397,7 +397,7 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 
 そして、(少なくとも Cookie の仕様では) Registrable Domain == eTLD+1 だ。
 
-しかし、先の例で言う herokuapp.com や glitch.me は(サービス運用者が取得したように) Registrable Domain だが実運用上 eTLD+1 ではないため、そのあたりを意識してあえて eTLD+1 と使い分ける場合もあるように思う。
+しかし、先の例で言う herokuapp や glitch.me は(サービス運用者が取得したように) Registrable Domain だが実運用上 eTLD+1 ではないため、そのあたりを意識してあえて eTLD+1 と使い分ける場合もあるように思う。
 :::
 
 
@@ -670,7 +670,7 @@ Set-Cookie: session_id=bad-cookie; Path=/; Secure;
 :::details Person in the Middle は成立するか?
 ネットワークを流れるパケットを盗聴や改竄するという Person in the Middle は、想像しているよりも簡単に発生し得る。あまり詳しくは書かないが、例えば自分がルータなどのネットワーク機器に触れる立場なら、そのルータに繋がったデバイスのパケットを見るのは容易なのが事実だ。
 
-例えばモバイル WiFi ルータの名前を「その場所にありそうなフリー Wifi の名前」にして置いておけば、無料 Wifi があると思って繋いでくる人がいそうなことは容易に想像できるだろう。その状態で、流れてくる信号が平文だったら HTTP Body にあるパスワードも、 Header にある Cookie も、 HTML に埋め込まれた個人情報も全部見放題だ。
+例えばモバイル WiFi ルータの名前を「その場所にありそうなフリー WiFi の名前」にして置いておけば、無料 WiFi があると思って繋いでくる人がいそうなことは容易に想像できるだろう。その状態で、流れてくる信号が平文だったら HTTP Body にあるパスワードも、 Header にある Cookie も、 HTML に埋め込まれた個人情報も全部見放題だ。
 
 それらの行為を社会的に防ぐのが法律で、技術的に防ぐのが暗号化だ。近年 Web を始めインターネット全般が「全ての通信を暗号化する」ことでそうしたことを防ぐ方向に動いている。
 
@@ -786,7 +786,7 @@ Set-Cookie: __Secure-session_id=YWxpY2U
 Cookie: __Secure-session_id=YWxpY2U
 ```
 
-これをさらに強力にしたのが `__Host-` だ。これは Secure 属性があり、 Path 属性が `/` で、 Doamin 属性が無い場合しか保存されなくなる。
+これをさらに強力にしたのが `__Host-` だ。これは Secure 属性があり、 Path 属性が `/` で、 Domain 属性が無い場合しか保存されなくなる。
 
 
 ```http
@@ -814,7 +814,7 @@ Set-Cookie: session_id= Max-Age=0;
 document.cookie="session_id=; Max-Age=0"
 ```
 
-最近では、明示的にブラウザが保存している情報を削除する `Clear-Site-Data` ヘッダが提案されており、実装が進んでいる。このヘッダは localStorage やブラウザキャッシュの削除なども含まれているが、以下のように設定すればサイトに保存されている Cookie を全て削除することが可能だ。
+最近では、明示的にブラウザが保存している情報を削除する `Clear-Site-Data` ヘッダが提案されており、実装が進んでいる。このヘッダは LocalStorage やブラウザキャッシュの削除なども含まれているが、以下のように設定すればサイトに保存されている Cookie を全て削除することが可能だ。
 
 
 ```http
