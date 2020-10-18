@@ -27,8 +27,9 @@ published: false
 - RFC 7322 - RFC Style Guide
   - https://tools.ietf.org/html/rfc7322
 - Sticky Session と LB
-- Session Hijack(という言葉を入れとく)
-- public suffix list
 - double keying cookie
 - gdpr ?
   - https://gdpr.eu/cookies/
+- 自分が付与した値であることを確認
+- 怪しければ再度付与
+- 知らない属性は受け入れない
