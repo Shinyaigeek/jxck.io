@@ -258,7 +258,7 @@ cart=5000:2
 
 もし読者が、例えば HTTP API を持っているどこかのサービスを使った経験があれば、大抵それらは一つのリクエストに JSON などであらゆる情報を詰め込んで、一回のリクエストで操作が完結するように作られているだろう。
 
-仮に、ここでいう決済の API である `/purchse` が、 JSON API として以下のように購入する商品のリストをまるっと受け入れる作るになっていても、そこまで違和感は無いのではないだろうか?(認証は別として)
+仮に、ここでいう決済の API である `/purchase` が、 JSON API として以下のように購入する商品のリストをまるっと受け入れる作るになっていても、そこまで違和感は無いのではないだろうか?(認証は別として)
 
 
 ```js
@@ -288,7 +288,7 @@ fetch('/purchase', {
 
 最初に Cookie に session_id を付与することで、サーバがカートを持ち、そこで覚えておくという話をした。
 
-「サーバが覚えておく」ということは「サーバが状態を持つ」ということだ。これを Stateless と対に **State(状態が)full(有る)** という。
+「サーバが覚えておく」ということは「サーバが状態を持つ」ということだ。これを Stateless と対に **State(状態が)ful(有る)** という。
 
 しかし、 Cookie を用いてもサーバが Stateless を保つことは可能だ。リクエストが来るたびにそれを `Set-Cookie` に追加して返し、カート(状態)を Cookie に持てば良い。
 
@@ -345,9 +345,9 @@ TODO: Cookie limit in spec
 
 前述のように、 Cookie に保存するのは session_id のみにし、サーバ側には session_id に紐付けて情報を保存する方法は、クライアントがリクエストをするたびにサーバに操作の結果を蓄積していることになる。最初に product_id 1000 を 1 つ追加すればサーバにはその情報が残り、次のリクエストは「それを踏まえた上で」別の商品を追加していることになり、これはサーバに **状態** があることを意味している。
 
-このようにサーバに状態を持つ実装方法を、 Stateless と対比して **state(状態が)full(ある)** と言う。 Cookie に付与したのは、この状態を識別するための id であり、状態が生成されてから行うやり取りを **Session** という。よってこの Cookie は Session ID と呼ばれ、近年の Web サービスの多くは、サーバに最初に接続した時に Session ID を付与することで Session を確立し、そこで Statefull なやり取りを行う実装を採用していることが多い。
+このようにサーバに状態を持つ実装方法を、 Stateless と対比して **state(状態が)ful(ある)** と言う。 Cookie に付与したのは、この状態を識別するための id であり、状態が生成されてから行うやり取りを **Session** という。よってこの Cookie は Session ID と呼ばれ、近年の Web サービスの多くは、サーバに最初に接続した時に Session ID を付与することで Session を確立し、そこで Stateful なやり取りを行う実装を採用していることが多い。
 
-これを踏まえてもう一度 Statefull なカートの実装を振り返ろう。
+これを踏まえてもう一度 Stateful なカートの実装を振り返ろう。
 
 まず、最初にクライアントが接続してきたときは、 Session を確立するための Session ID を Cookie に付与する。
 
@@ -391,7 +391,7 @@ Set-Cookie: session_id=YWxpY2U
 
 
 ```http
-# Statefull な処理
+# Stateful な処理
 POST /cart/items HTTP/1.1
 Host: ec.example
 Content-Length: 23
@@ -436,7 +436,7 @@ username=alice&password=xxxxxxxx
 
 これが session_id を用いたカートの実装で、あり Cookie の代表的な使い方だ。
 
-こうしたことが可能になったことによって Web の利用範囲が格段に増えた、理由は、 「Set-Cookie によって付与された値を、次から Cookie で自動で送る」というこの単純な挙動が、 **本来は Stateless を前提として設計された HTTP に Statefull な処理を可能にしてしまった** からだ。
+こうしたことが可能になったことによって Web の利用範囲が格段に増えた、理由は、 「Set-Cookie によって付与された値を、次から Cookie で自動で送る」というこの単純な挙動が、 **本来は Stateless を前提として設計された HTTP に Stateful な処理を可能にしてしまった** からだ。
 
 :::details HTTP と Cookie の関係
 HTTP の仕様は [RFC7231](https://tools.ietf.org/html/rfc7231) に定義されており、その冒頭は以下の文から始まる。
@@ -447,7 +447,7 @@ HTTP の仕様は [RFC7231](https://tools.ietf.org/html/rfc7231) に定義され
 
 > This document defines the HTTP Cookie and Set-Cookie header fields.  These header fields can be used by HTTP servers to store state (called cookies) at HTTP user agents, letting the servers maintain a stateful session over the mostly stateless HTTP protocol.
 
-HTTP は本来は GET で文書を取得して終わりだったため Stateless で良かったが、 `<form>` から POST をし始めチャットなどができるようになった。すると毎回チャットにユーザ名やメールアドレスを入れないで済むように、それらを保存できるように Cookie が作られたのが始まりと聞いたことがある。 RFC の冒頭からも Stateless だった HTTP と、そこに Statefull をCookie が持ち込んだという構図が読み取れるだろう。
+HTTP は本来は GET で文書を取得して終わりだったため Stateless で良かったが、 `<form>` から POST をし始めチャットなどができるようになった。すると毎回チャットにユーザ名やメールアドレスを入れないで済むように、それらを保存できるように Cookie が作られたのが始まりと聞いたことがある。 RFC の冒頭からも Stateless だった HTTP と、そこに Stateful をCookie が持ち込んだという構図が読み取れるだろう。
 :::
 
 
