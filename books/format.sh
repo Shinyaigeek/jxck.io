@@ -1,4 +1,4 @@
-#format.rb **/*.md
+format.rb **/*.md
 
 git grep '説明'
 git grep 'です'
