@@ -60,10 +60,11 @@ NIST(National Institute of Standards and Technology) は、アメリカで多岐
 
 ## Cookie にまつわる攻撃
 
-適切な Session ID を生成できれば、それを Cookie に付与すれば Seasion が維持できる。
+適切な Session ID を生成できれば、それを Cookie に付与すれば Session が維持できる。
+
 
 ```http
-Set-Cookie: session_id=TODO
+Set-Cookie: session_id=YWxpY2U
 ```
 
 そしてこの値は攻撃者の手に渡れば、攻撃者は Session を盗む(Session Hijacking)ことができることを意味するため、サービスにおいて Session 機能を提供するのであれば、この Session ID は死守しなければならない。
@@ -78,8 +79,6 @@ Set-Cookie: session_id=TODO
 また Cookie Injection は、 Session ID 以外の Cookie が存在した場合、そこにも直接的な影響がある。例えば、前節の 「Cookie を用いたカート実装」をしていた場合、 Cookie Injection によってカート自体を改竄し、意図しない買い物をさせることもできるかもしれない。
 
 以上のことを踏まえた上で、 Cookie の適切な扱いを解説するとともに、「Cookie が本来いかに信用ならないものなのか」をみていこう。
-
-
 
 
 ## Session ID 付与のタイミング
@@ -116,7 +115,7 @@ username=alice&password=xxxxxxxx
 しかし、このまま **単純に `YWxpY2U` に Alice を紐付ける実装には大きな落とし穴がある** ため注意したい。
 
 
-### Session Fixation 攻撃
+### Session Fixation
 
 もし Alice が送ってきた session_id が、サーバによって付与されたものではなく、悪意のある攻撃者によって Alice のクライアントに埋め込まれた値だったら、つまり Cookie Injection 成立していたらどうなるだろうか?
 
@@ -125,7 +124,7 @@ username=alice&password=xxxxxxxx
 
 ```http
 GET / HTTP/1.1
-Host: exmaple.com
+Host: example.com
 Content-Length: 256
 Set-Cookie: YXR0YWNrZXI
 
@@ -156,21 +155,18 @@ Host: example.com
 Cookie: session_id=YXR0YWNrZXI
 ```
 
-このように、攻撃者により Inject された Cookie にアカウントを紐付けさせるこの攻撃を **Session Fixation 攻撃** と呼ぶ。
+このように、攻撃者により Inject された Cookie にアカウントを紐付けさせるこの攻撃を **Session Fixation** と呼ぶ。
 
 
 ### Session Fixation 対策
 
-Session Fixation 攻撃への対策は知られており、「 **認証が終わったら session_id を再生成する** 」ことで防ぐことができる。 Alice の Session ID を更新してしまえば、攻撃者は新しい Session ID を知らないため、なり済ませないからだ。
+Session Fixation への対策は知られており、「 **認証が終わったら session_id を再生成する** 」ことで防ぐことができる。 Alice の Session ID を更新してしまえば、攻撃者は新しい Session ID を知らないため、なり済ませないからだ。
 
-しかし、それだけでは認証する前の Seasion Fixation は防げず、 Alice がカートに追加した内容は攻撃者に見えてしまう。もし認証前でもカートへの追加を許可し、それを Session Fixation から守るには、カートに追加するたびに Session ID を再生成するといった方法が考えられる。しかし、個人情報などを扱う前には必ず認証を挟むことが推奨され、カートへの追加も認証後でないとできないようにしている EC サイトもある。
+しかし、それだけでは認証する前の Session Fixation は防げず、 Alice がカートに追加した内容は攻撃者に見えてしまう。もし認証前でもカートへの追加を許可し、それを Session Fixation から守るには、カートに追加するたびに Session ID を再生成するといった方法が考えられる。しかし、個人情報などを扱う前には必ず認証を挟むことが推奨され、カートへの追加も認証後でないとできないようにしている EC サイトもある。
 
 「Alice のクライアントに任意の Cookie を保存するなんてできるのか?」と思うかもしれないが、それがどう可能かは後ほど解説する。先に言っておきたいのは(近年は昔よりは良くなりつつ有るが) Cookie Injection を完璧に防ぐことは簡単ではないこと、もっと言えば **クライアントが送ってくる Cookie は基本的には信用ならない** ということだ。よって Cookie Injection が起こっても、 Session Fixation につながらなように対策することが必要だ。
 
-
 OWASP のガイドでは、「権限レベルが変わったら」 Session ID を再生成すべきといった書き方をしているが、わかりやすく言うなら、サービスを作る中で「ここから先ユーザが処理を進めたとき、もし Session Fixation が発生していたらまずいな」と思う場面では再度認証をはさみ、そのタイミングで Session Cookie を再生成しておくと良いだろう。大手のサービスで重要な操作(パスワーの変更 etc)の前に再度認証を挟む実装をよく見ると思う、どこで認証を挟んでいるかに注目してみると参考になるだろう。
-
-
 
 :::message alert
 Cookie はサーバが付与し、サーバが知らない Cookie を勝手に送っても無視される、と普通なら思うだろう。驚くことに、世の中には「クライアントが送ってきた Cookie でサーバが知らない値でも、それをその後の Session ID として使ってしまう」という実装が存在することが知られている(Session Adoption)。
@@ -270,7 +266,7 @@ Cookie: session_id=bad-cookie
 
 Bob は、 Alice のサービスのユーザに任意の Cookie を埋め込む Cookie Injection を成立することができた。 Path 属性は「どこに送るのか」を制限するだけなのでこの攻撃に無力だ。 Cookie はそもそも「 **どの Path で付与されたか** 」という情報は持たないため、 Alice はそれが「 **確かに自分が付与したものか、攻撃者に埋め込まれたものか** 」を判断できないのだ。
 
-Cookie に Seasion ID ではなく直接的な値があれば、それをそのまま改竄できる。session_id の場合は、 Inject されたものを Alice のサービスが認証後も継続して使ってしまうと、そこで Session Fixation が成立してしまう。
+Cookie に Session ID ではなく直接的な値があれば、それをそのまま改竄できる。 session_id の場合は、 Inject されたものを Alice のサービスが認証後も継続して使ってしまうと、そこで Session Fixation が成立してしまう。
 
 つまり、「 **Cookie において Path は Origin のようなセキュリティの境界にはなりえない** 」ため、 Path ごとに Credential が別になる(つまり認証が違う)サービスを同居する構成はとってはならないのだ。
 
@@ -321,7 +317,7 @@ alice.example.com で認証したレスポンスで以下の Set-Cookie が返�
 Set-Cookie: session_id=YWxpY2U; Path=/; Domain=example.com
 ```
 
-すると、この Cookie は bob.example.com にも送信されてしまうため、 Session ID の漏洩が発生し、 Bob は Alice のサービス利用者になりすますことができてしまう。
+すると、この Cookie は bob.example.com にも送信されてしまうため、 Session ID の漏洩が発生し、 Bob は Alice のサービス利用者に成り済ますことができてしまう。
 
 さらに Alice が Domain 属性をつけていなかったとしても、 Bob は以下のようなレスポンスを Alice のユーザに返すことで、 Cookie Injection を行うことができる。
 
@@ -351,7 +347,7 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 :::
 
 
-## Registerable Doamin と Public Suffix List
+## Registrable Doamin と Public Suffix List
 
 `Domain=example.co.jp` とすると example.co.jp のサブドメインに Cookie が送られるという解説をしたが、ここで `Domain=co.jp` と指定したとしても *.co.jp に送られるわけがないと思うだろう。しかし、実は似たようなことが実際に発生したことがある。
 
@@ -360,11 +356,11 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 単なる IE のバグだと考えればそれでもいいが、そもそもなぜこうしたことが起こったのかは、そもそもの「Domain」というものが、どう定義されどう運用されているかを一度知っておくと良いだろう。その考え方は今後も重要になる。
 
 
-### Top Level Domain と Registerable Domain
+### Top Level Domain と Registrable Domain
 
-例えば `.jp` について考えてみよう、 `.jp` は Top Level Domain (TLD) と呼ばれ、我々は `.jp` のサブドメインにあたる部分をドメインレジストラから購入することができる。ここでは例示ドメインだとややこしいので `${好きな単語}.jp` のようなイメージで考えて欲しい。そして、この購入できるドメインを Registerable Domain という。
+例えば `.jp` について考えてみよう、 `.jp` は Top Level Domain (TLD) と呼ばれ、我々は `.jp` のサブドメインにあたる部分をドメインレジストラから購入することができる。ここでは例示ドメインだとややこしいので `${好きな単語}.jp` のようなイメージで考えて欲しい。そして、この購入できるドメインを Registrable Domain という。
 
-一方、末尾が `.co.jp` なドメインもあり、 `${好きな単語}.co.jp` も取得できる。 `co.jp` というドメイン自体は取得できず、単にこれを `.jp` のサブドメインと扱うことはできない。つまり、ドメインは `.` で分けたとき最後が TLD でそこに単語を足せば Registerable Domain になる。というほど簡単ではない。そして最後がどういう組み合わせだと取得できなくて、どうなっていれば取得できるのかは、ドメインの運用によってバラバラなのだ。
+一方、末尾が `.co.jp` なドメインもあり、 `${好きな単語}.co.jp` も取得できる。 `co.jp` というドメイン自体は取得できず、単にこれを `.jp` のサブドメインと扱うことはできない。つまり、ドメインは `.` で分けたとき最後が TLD でそこに単語を足せば Registrable Domain になる。というほど簡単ではない。そして最後がどういう組み合わせだと取得できなくて、どうなっていれば取得できるのかは、ドメインの運用によってバラバラなのだ。
 
 都道府県型 JP ドメインを考えると、 `${好きな単語}.jp` は取得できるが、 `tokyo.jp` は取得できず、 `${好きな単語}.tokyo.jp` は取得できる。これは `tokyo.jp` をレジストラがそう運用しているからという、仕様ではなく運用の都合なのだ。
 
@@ -373,7 +369,7 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 
 これはつまり、 `tokyo.jp` はまるでその組み合わせを Top Level Domain のような扱いをしないといけないことを意味する。そうしたドメインの組み合わせを Effective Top Level Domain (eTLD) と呼ぶ。
 
-この eTLD は何度も言うように機械的に決まっているわけではなく、レジストラの運用次第なので、ドメインを見ただけではわからない。従って Cookie でも Domain 属性に `Domain=tokyo.jp` と書いてあったとき、これが正規に取得されている `.jp` の Registerable Domain を指定しているのか、そうではないのかがブラウザにはわからないのだ。
+この eTLD は何度も言うように機械的に決まっているわけではなく、レジストラの運用次第なので、ドメインを見ただけではわからない。従って Cookie でも Domain 属性に `Domain=tokyo.jp` と書いてあったとき、これが正規に取得されている `.jp` の Registrable Domain を指定しているのか、そうではないのかがブラウザにはわからないのだ。
 
 そこで Mozilla は、「どの組み合わせが eTLD として運用されているのか」を独自に集めてファイルに並べ、ブラウザにそれを読み込んでドメインのパースに使っていた。そのリストは Mozilla 以外のソフトウェアにもニーズがあるため、今はコミュニティ手動でオープンに管理されている。このリストを Public Suffix List(PSL) と言う。(今は [github](https://github.com/publicsuffix/list/blob/master/public_suffix_list.dat) でも公開されている)
 
@@ -399,9 +395,9 @@ Set-Cookie: session_id=YWxpY2U; Path=/;
 :::details eTLD+1
 つまり、通常サービスが運用される単位は eTLD の左に一階層付与したドメイン、例えば `${好きな単語}.${eTLD}` となる。これを **eTLD+1** と表現することがある。
 
-そして、(少なくとも Cookie の仕様では) Registerable Domain == eTLD+1 だ。
+そして、(少なくとも Cookie の仕様では) Registrable Domain == eTLD+1 だ。
 
-しかし、先の例で言う herokuapp.com や glitch.me は(サービス運用者が取得したように) Registerable Domain だが実運用上 eTLD+1 ではないため、そのあたりを意識してあえて eTLD+1 と使い分ける場合もあるように思う。
+しかし、先の例で言う herokuapp.com や glitch.me は(サービス運用者が取得したように) Registrable Domain だが実運用上 eTLD+1 ではないため、そのあたりを意識してあえて eTLD+1 と使い分ける場合もあるように思う。
 :::
 
 
@@ -430,13 +426,13 @@ POST /entries HTTP/1.1
 Host: example.com
 Content-Type: application/x-www-form-urlencoded
 Content-Length: 256
-Cookie: session_id=q1w2e3r4t5y6
+Cookie: session_id=YWxpY2U
 
 title=${嫌がらせタイトル}&body=${嫌がらせ本文}
 ```
 
 
-## Timing 攻撃
+### Timing 攻撃
 
 次は、 SNS におけるブロック機能を考えてみよう。攻撃者は、 Alice が誰をブロックしているかを調べたいとする。
 
@@ -445,10 +441,10 @@ title=${嫌がらせタイトル}&body=${嫌がらせ本文}
 
 ```js
 function timing_attack(username) {
-  img = new Image()
-  t1 = performance.now()
+  const img = new Image()
+  const t1 = performance.now()
   img.onerror = () => {
-    t2 = performance.now()
+    const t2 = performance.now()
     // block していれば速く
     // block していなければ遅い
     console.log(t2-t1)
@@ -471,7 +467,6 @@ SameSite 属性は、「異なる Site へのリクエストに Cookie を付与
 なぜ SameOrigin 属性じゃないかと言うと、ここまで解説したように Cookie は Origin の概念が生まれる前からあり、 Domain の設定によってサブドメインにも送られるような仕様になっている。また、 Scheme や Port にも縛られていないため、 http ページから https ページへのリクエストや、他の Port へのリクエストにも付与される。
 
 TODO: Cookie が Origin に閉じないこと別途節立てするか
-
 
 そこで、従来 Cookie に設定できた範囲を括る Site という概念を定義し、その Site が同じであれば送られるといった仕様を追加したのだ。 Site は先に解説した eTLD+1 を基本とし、そのサブドメインを Scheme / Port を無視してくくる。
 
@@ -510,7 +505,7 @@ Set-Cookie: session_id=YWxpY2U; SameSite=Strict;
 
 しかし session_id にこれをつけてしまうと、例えば alice.example から bob.example への「 **ページ遷移** (Top Level Navigation)」でも Cookie が付与されなくなるため、ログインしてないとみなされてしまう。そして、そのページでリロードするだけで Cookie が付与されログイン状態になるという変な挙動になる。
 
-そこで、 Top Level Navication の場合にのみ CrossSite からも Cookie を送り、 Form からの POST や、画像などサブリソースへのリクエストには付与しないよう緩和した設定が Lax だ。
+そこで、 Top Level Navigation の場合にのみ CrossSite からも Cookie を送り、 Form からの POST や、画像などサブリソースへのリクエストには付与しないよう緩和した設定が Lax だ。
 
 
 ```http
@@ -535,7 +530,8 @@ Set-Cookie: session_id=YWxpY2U; SameSite=None;
 
 `SameSite=Strict` にすれば、 Cross Site な Cookie の送信が一切発生しなくなるため、かなりの安全が期待できる一方、他のページから遷移したときの Session も維持されなくなるため、単純な導入には注意が必要だ。そこで、 RFC6265bis では Strict を導入する際の方法について言及があるので紹介する。
 
-まず、ユーザの操作を "read" と "write" で分け、それぞれの権限が別の Cookie によって付与される構成にする。具体的には POST などによる副作用が発生するもを "write" そうでないものを "read" としてカテゴライズし、それぞれを行うために Cooki も 2 つに分ける。そして "write" Cookie のみ Strict にし、 "read" Cookie については Lax にするというものだ。
+まず、ユーザの操作を "read" と "write" で分け、それぞれの権限が別の Cookie によって付与される構成にする。具体的には POST などによる副作用が発生するもを "write" そうでないものを "read" としてカテゴライズし、それぞれを行うために Cookie も 2 つに分ける。そして "write" Cookie のみ Strict にし、 "read" Cookie については Lax にするというものだ。
+
 
 ```http
 Set-Cookie: read_cookie=cmVhZA;   SameSite=Strict; Path=/; Secure; HttpOnly
@@ -555,17 +551,12 @@ Set-Cookie: write_cookie=d3JpdGU; SameSite=Lax;    Path=/; Secure; HttpOnly
 :::
 
 
-
-
-
-
-
 ## Secure 属性と HTTPS への制限
 
 
 ### HTTPS 化による Credential の保護
 
-前節で解説したように、 Credential としての Cookie が盗まれると、Session Hijacking が成立する可能性がある。そして、 Person in the Middle などの攻撃が成立した場合、平文の HTTP 通信は簡単に盗聴されてしまう。したがって、 Cookie を用いた通信は暗号化するべだと言える。
+前節で解説したように、 Credential としての Cookie が盗まれると、 Session Hijacking が成立する可能性がある。そして、 Person in the Middle などの攻撃が成立した場合、平文の HTTP 通信は簡単に盗聴されてしまう。したがって、 Cookie を用いた通信は暗号化するべだと言える。
 
 現在のように HTTP Everywhere が普及する前は「パスワードを送信するページだけ暗号化する」などというポリシーがまかり通っていた時代があるが、パスワードだけを暗号化しても、その後アカウントが紐付いた Session ID が盗まれれば被害は防げない。基本的には全ての URL を暗号化するのが前提だ。
 
@@ -731,12 +722,11 @@ Set-Cookie: session_id=YWxpY2U; Path=/; Max-Age=2592000
 
 しかし、他のサイトの Cookie が増えていき、ブラウザに保存できる限界を超えると古いものから消されることがあるため、**指定した時間確実に残ることは保証されるわけではない** という点には注意したい。
 
-通常、長期の保存を意図しても一年以上を指定する意味はないだろう。また、 session_id は長くしすぎると攻撃が発生している場合の影響が拡大していく可能性があるため、3ヶ月や1週間などにし、頻繁に利用していればSession は維持され続けるが、連続して使わない日々が一定期間続くと、再訪時に認証を求めるといった実装が一般的だろう。
+通常、長期の保存を意図しても一年以上を指定する意味はないだろう。また、 session_id は長くしすぎると攻撃が発生している場合の影響が拡大していく可能性があるため、 3 ヶ月や 1 週間などにし、頻繁に利用していれば Session は維持され続けるが、連続して使わない日々が一定期間続くと、再訪時に認証を求めるといった実装が一般的だろう。
 
 Session Cookie の起源を長くする時、最も恐るべきリスクは、「実は攻撃者が session_id の盗み出しに成功しており、別でログインしてユーザの行動をひっそりと見ている」という状況だろう。そこで Session を維持する中でも session_id の値を定期的に更新したり、重要な情報へのアクセスには再度認証を強制するなどの対策が考えられる。また Session オブジェクトの中に認証時の IP アドレスや User-Agent を保存しておき、アクセスしてきた環境があまりにも違ったら、認証などで確認を促すサイトもあるだろう。意図した Cookie が、意図したブラウザから、意図した通りに送られているかは、常に疑うくらいでもおかしくは無いと筆者は考えている。
 
-TODO: (NIST に cookie 期限あったっけ？)
-
+TODO: (NIST に cookie 期限あったっけ?)
 
 :::details ブラウザを閉じると消える cookie
 Max-Age の無い Set-Cookie の場合 Cookie はブラウザが閉じると消えるという挙動になる。
@@ -746,9 +736,7 @@ Max-Age の無い Set-Cookie の場合 Cookie はブラウザが閉じると消�
 現在では、多くのサービスが明示的にログアウトするか長期間使用しない状態が続くまではセッションを維持し、ブラウザを閉じるたびにログアウトするなどと言ったことはしないだろう。つまり、少なくとも session_id には Max-Age を指定するのが一般であり、その期間をコントロールする実装が通常だ。以降「ブラウザを閉じたら消える」意味での Session Cookie は解説には出てこない。
 :::
 
-
-
-また、かつては Max-Age ではなく Expire 属性に日付を指定し、そこまでの期間を有効にするという指定方法があった。
+また、かつては Max-Age ではなく Expires 属性に日付を指定し、そこまでの期間を有効にするという指定方法があった。
 
 
 ```http
@@ -760,7 +748,6 @@ Set-Cookie: session_id=YWxpY2U; Expires=Sun, 02 Feb 2020 02:02:02 GMT
 [^3]: 同じことは、ブラウザキャッシュをコントロールする Expires ヘッダから Cache-Control ヘッダへの max-age 属性の追加でも行われている。
 
 現在のブラウザのほとんどは Max-Age に対応しているが、対応していないブラウザのために両方送るサービスもある。 Expires にしか対応してないブラウザに Max-Age だけを送った場合は、期限を指定してない Cookie としてブラウザを閉じたら消えるだろうと予想される。
-
 
 
 ## Cookie Prefixes
@@ -833,8 +820,6 @@ document.cookie="session_id=; Max-Age=0"
 ```http
 Clear-Site-Data: "cookies"
 ```
-
-
 
 
 ## Cookie の用途と属性のまとめ

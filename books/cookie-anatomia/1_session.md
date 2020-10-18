@@ -48,6 +48,7 @@ product_id=1000&count=1
 
 ![TODO](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-33EAD.png)
 
+
 ```http
 # だれが買ったのかを示す情報がなにもない
 POST /cart/items HTTP/1.1
@@ -100,6 +101,7 @@ product_id=1000&count=1
 
 ![TODO](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-25199.png)
 
+
 ### ユーザの識別
 
 session_id によって「このリクエストとこのリクエストは別の人だ」という **区別** ができるようになった。しかし、 EC では最終的に会計をする際には「買おうとしてるのは誰か」を知る必要がある。
@@ -143,6 +145,7 @@ Cookie: bob
 あくまで Cookie には、他のユーザと区別できるよう一意で、推測できないランダムな値(Nonce)を付与し、サーバ側でその値に対してユーザアカウントを紐付けるというのが一般的な実装だ。
 
 ![TODO](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-3F374.png)
+
 
 ## Session とは何か
 
@@ -329,7 +332,6 @@ username=alice&password=xxxxx
 
 TODO: Cookie limit in spec
 
-
 なにより、値がブラウザに保存されている以上ブラウザを変えると値が継続されない。モバイルで買い物していたカートを引き続き PC で見たいといったことが、この方法ではできないのだ。
 
 したがって、この方法もカート実装として主流とは言い切れない。
@@ -445,7 +447,7 @@ HTTP の仕様は [RFC7231](https://tools.ietf.org/html/rfc7231) に定義され
 
 > This document defines the HTTP Cookie and Set-Cookie header fields.  These header fields can be used by HTTP servers to store state (called cookies) at HTTP user agents, letting the servers maintain a stateful session over the mostly stateless HTTP protocol.
 
-HTTP は本来は GET で文書を取得して終わりだったため Stateless で良かったが、 `<form>` から POST をし始めチャットなどができるようになった。すると毎回チャットにユーザ名やメールアドレスを入れないですむように、それらを保存できるように Cookie が作られたのが始まりと聞いたことがある。 RFC の冒頭からも Stateless だった HTTP と、そこに Statefull をCookie が持ち込んだという構図が読み取れるだろう。
+HTTP は本来は GET で文書を取得して終わりだったため Stateless で良かったが、 `<form>` から POST をし始めチャットなどができるようになった。すると毎回チャットにユーザ名やメールアドレスを入れないで済むように、それらを保存できるように Cookie が作られたのが始まりと聞いたことがある。 RFC の冒頭からも Stateless だった HTTP と、そこに Statefull をCookie が持ち込んだという構図が読み取れるだろう。
 :::
 
 
@@ -530,8 +532,7 @@ app.get('/', (req, res) => {
 
 ![TODO 図5](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-F1F5A.png)
 
-
-このことから、現状では Cookie は Credential (ユーザの資格情報)と呼ばれ、機密情報として扱われる。もし lang や theme などだけなら単体で漏洩してもなりすますまではできないが(それでも個人情報漏洩の可能性はある)、前述の通り最近ではそうした設定値よりも Session ID としての利用が支配的であるため、 Cookie は Credential であり絶対に死守しないといけない情報なのだ。
+このことから、現状では Cookie は Credential (ユーザの資格情報)と呼ばれ、機密情報として扱われる。もし lang や theme などだけなら単体で漏洩しても成り済ますまではできないが(それでも個人情報漏洩の可能性はある)、前述の通り最近ではそうした設定値よりも Session ID としての利用が支配的であるため、 Cookie は Credential であり絶対に死守しないといけない情報なのだ。
 
 従って、 Cookie を用いるサービスは、 Cookie の性質をきちんと把握し、適切な扱い/実装を行うことが求められる。
 

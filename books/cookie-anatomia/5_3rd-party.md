@@ -42,14 +42,11 @@ Set-Cookie: id=deadbeef
 
 つまり、同じ iframe を埋め込んでいれば 1st Party がなんであれ同じ Cookie が送信されるため、別のページでもアクセスしている人を識別することができるのだ。
 
-
-
 3rd Party Cookie は iframe でなくとも、 JS, CSS, Img などのサブリソースでも送られるが、埋め込んだ後の JS による操作といった自由度を考えて iframe で行われる場合が多い。
 
 そして、埋め込む内容の代表例が広告だ。
 
 例えばある EC サイトで「タオル」について検索をしたとする。タオルの検索結果ページは iframe の URL にパラメータでタオルを調べたことを埋め込んでおく。
-
 
 
 ```html
@@ -90,8 +87,6 @@ Cookie: id=deadbeef
 
 *ここから、その概要的な処理の流れを示しつつ、 3rd Party Cookie の使われ方を解説するが、あくまで例示のための挙動であり、これをこのまま Single Sign On として実装するのは危険である。あくまで 3rd Party Cookie の使われたを理解するための助けとして読んで欲しい*
 
-
-
 例えば、社内ポータルの https://portals.example にログインしている社員は、 https://kintai.example.com にも認証無しでログインさせたいとする。
 
 社内ポータルアクセス時に認証を経て、 Cookie を付与したとしても、その Cookie はあくまで https://portals.example に紐付いているため、 https://kintai.example.com には送信されない。
@@ -100,6 +95,7 @@ Cookie: id=deadbeef
 
 例えば https://portals.example にアクセスし、 Cookie が無かった場合は認証が必要と判断され、共通認証用のドメインである https://account.example.jp にリダイレクトされる。このとき、認証が終わった後に portals に戻ってこれるように、クエリパラメータを以下のようにしておく。
 
+
 ```http
 302 Found HTTP/1.1
 Location: https://account.example.jp&from=https://portals.example
@@ -107,11 +103,14 @@ Location: https://account.example.jp&from=https://portals.example
 
 社内の認証は https://account.example.jp というドメインで行うことにし、どの社内システムにアクセスしても Cookie が無ければ同様に最初はこのドメインにリダイレクトされる。
 
-
 このページの認証画面に、 ID とパスワードを入力するとログインが行われ、 Cookie が発行される。
+
 この Cookie は https://account.example.jp に紐付いている点が重要だ。
+
 そして、そのレスポンスで元の https://account.example.jp にリダイレクトで戻す。
+
 その URL には、認証済みである情報を付与しておく。この情報はセッション ID などと呼ばれることが多い。
+
 
 ```
 303 See Other HTTP/1.1
@@ -137,6 +136,7 @@ Set-Cookie: session_id=deadbeef
 
 ところが、今回は account.example.jp への Cookie はすでにあるため、それが送られることになる。
 
+
 ```
 302 Found HTTP/1.1
 Location: https://account.example.jp&from=https://portals.example
@@ -145,9 +145,11 @@ Cookie: session_id=deadbeef
 ```
 
 すると、 account.example.jp には認証済みとわかるため、ログイン画面は出ずにそのまま kintai へリダイレクトされる。
+
 このとき、すでに Cookie は付与しているため Set-Cookie は不要だ(更新のために付与しても良い)
 
 そして、 kintai に対して認証済みであることを知らせるために URL のクエリには session_id つける。
+
 
 ```
 303 See Other HTTP/1.1
@@ -156,48 +158,19 @@ Location: https://kintai.example.com/?session_id=deadbeef
 ```
 
 すると、 kintai はクエリに有る session_id から認証済みであることを知り、ログインさせる。
+
 ユーザとしては、 kintaini アクセスしたら二回リダイレクトが発生しただけでログイン済みとなった形になる。
+
 もちろん kintai は自分のための 1st Party Cookie を付与することで次回からのアクセスもログイン済みにできる。
 
 つまり Single Sign On は、共通する認証ドメインを用意し、その Cookie を保存させ、リダイレクトで認証ドメインを経由することで、 SSO に参加する任意のドメインを認証するのが基本的な考え方だ。
 
 認証ドメイン(account.example.jp) の Cookie は全てのサービスからみて 3rd Party Cookie であるため、これも 3rd Party Cookie を利用していると言える。
 
-
 (何度も言うが、上記の仕組みはあくまでも理解を助けるための概要であり、そのまま実装すると多種の問題が起こるだろう、基本的に SSO は自分で実装しようとせず適切なソリューションの導入を検討することを強く勧める)
-
-
-
-
-
 
 
 ## 3rd Party Cookie
 
 
 ## ITP
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
