@@ -428,7 +428,7 @@ fetch("https://sns.example/jxck/post/1234", {
 
 しかし、 Ajax が発見されて以降、 XHR による動的なリクエストを JS から行うようになってから、 SOP や CORS と言ったブラウザからの何かの取得(fetch)関して、仕様上考えることが増えるようになった。
 
-最初は CORS という、 Origin をまたぐために必要な仕様を策定していたが、 CORS ではない処理でも考えることは多くある。そこで WHATWG では、どういう場合に Cookie が付与されるのか、どういう場合に Cache がヒットするのか、いつ Preflight が必要なのかといった「**ブラウザから何かを取得する(fetcing)とはどういう処理か**」という要件を整理し、それをまとめた **Fetch** という仕様を作った。
+最初は CORS という、 Origin をまたぐために必要な仕様を策定していたが、 CORS ではない処理でも考えることは多くある。そこで WHATWG では、どういう場合に Cookie が付与されるのか、どういう場合に Cache がヒットするのか、いつ Preflight が必要なのかといった「**ブラウザから何かを取得する(fetching)とはどういう処理か**」という要件を整理し、それをまとめた **Fetch** という仕様を作った。
 
 - https://fetch.spec.whatwg.org/
 
@@ -460,7 +460,7 @@ Fetch の仕様では、ブラウザから発生する Fetch には大別して 
 // 同じ Origin に対しての CORS リクエスト
 fetch('/', {mode: 'cors'})
 
-// 別の Origin に対して CROS ではないリクエスト
+// 別の Origin に対して CORS ではないリクエスト
 fetch('https://example.com', {mode: 'no-cors'})
 ```
 

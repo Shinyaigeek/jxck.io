@@ -148,7 +148,7 @@ self.addEventListener('fetch', (e) => {
 
 ### crossorigin 属性
 
-CORS が策定される以前からある `<script>` や `<img>` などは、異なる Origin からリソースを取得する場合に no-cros mode 、つまり Simple Request として CORS 無しで取得できることは既に解説した。
+CORS が策定される以前からある `<script>` や `<img>` などは、異なる Origin からリソースを取得する場合に no-cors mode 、つまり Simple Request として CORS 無しで取得できることは既に解説した。
 
 こうした HTML の要素に `crossorigin` 属性を付与すると、 Simple Request ではなく明示的に cors mode にすることもでる。
 
