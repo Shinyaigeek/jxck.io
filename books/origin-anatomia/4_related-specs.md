@@ -248,7 +248,7 @@ app.post('/entries', (req, res) => {
   // 3. 投稿を保存
   const title = req.body.title
   const article = req.body.article
-  db.save(titile, article)
+  db.save(title, article)
   res.send(201)
 })
 ```
@@ -280,7 +280,7 @@ title=嫌がらせタイトル&article=嫌がらせ本文
 
 注目すべき点は、 form からのリクエストは Origin をまたげるため、ブラウザによってブロックされたりはせず、またリクエストには Cookie が自動で付与されるため、ユーザがブログサイトにログイン済みのブラウザでこの罠を踏むとリクエストが送信さることだ。
 
-サーバ側の実装でみると、 HTTP Method, Path, Cookie, Requst body 全てが一致するため、このリクエストを受け入れてしまい、攻撃者はユーザに任意のブログを投稿させることができてしまうのだ。
+サーバ側の実装でみると、 HTTP Method, Path, Cookie, Request body 全てが一致するため、このリクエストを受け入れてしまい、攻撃者はユーザに任意のブログを投稿させることができてしまうのだ。
 
 問題は、サーバがリクエストの発生元を正しく識別できないことに起因する。そこでこのような CSRF の対策には、 Form に One Time Token を隠し、それが一致することを確認するという方法が一般的だ。
 
@@ -324,7 +324,7 @@ app.post('/entries', (req, res) => {
   // 4. req.body.title と req.body.article を受理する
   const title = req.body.title
   const article = req.body.article
-  db.save(titile, article)
+  db.save(title, article)
   res.send(201)
 })
 ```

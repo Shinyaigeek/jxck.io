@@ -191,7 +191,7 @@ Cross-Origin-Resource-Policy: cross-origin
 
 :::message
 CORP は、「そのリソースを読み込んでも良い Origin を指定する」仕様だったが、そもそも CORS もその目的だったのでは? と思うかもしれない。
-実は CORS に対応することでも同様の効果があるのだが、それは読み込み側が `<scritp crossorigin>` とし cors リクエストで secret.js を読み込んだ場合のみだ。サービス側が CORS に対応しても攻撃者は `crossorigin` 属性を付けず `no-cors` としてリクエストすれば成功してしまうため、 Origin 属性が無ければレスポンスを返さないなどといった対応が別途必要となる。
+実は CORS に対応することでも同様の効果があるのだが、それは読み込み側が `<script crossorigin>` とし cors リクエストで secret.js を読み込んだ場合のみだ。サービス側が CORS に対応しても攻撃者は `crossorigin` 属性を付けず `no-cors` としてリクエストすれば成功してしまうため、 Origin 属性が無ければレスポンスを返さないなどといった対応が別途必要となる。
 従って CORP ヘッダを一つ付けるだけの方がデプロイは楽だろう。
 :::
 
@@ -271,7 +271,7 @@ Opener を防ぐ方法としては、 Opener 側が `<a rel=noopener>` を指定
 
 ![COEP + COOP で Isolation された状態](https://cacoo.com/diagrams/L0Jn5wPiobCrsSDy-68A14.png 'site-isolation by coop & coep')
 
-Chrome のように、ブラウザ全体で Site Isolation が実装されてないブラウザでも、これらヘッダについてだけ明示的にプロセスを分ける実装ができれば、 Spectre の対策になる。 Spectre が緩和できたことは、それによって無効化されていた高精度タイマーになりえる仕様、つまり Shared Array Buffer を有効化し、 `Performanece.now()` の解像度を戻すことができるのだ。[^3]
+Chrome のように、ブラウザ全体で Site Isolation が実装されてないブラウザでも、これらヘッダについてだけ明示的にプロセスを分ける実装ができれば、 Spectre の対策になる。 Spectre が緩和できたことは、それによって無効化されていた高精度タイマーになりえる仕様、つまり Shared Array Buffer を有効化し、 `Performance.now()` の解像度を戻すことができるのだ。[^3]
 
 [^3]: 実際、 Chrome では COEP/COOP が有効になったサイトにのみ、 [SharedArrayBuffer を有効にする予定](https://groups.google.com/a/chromium.org/forum/#!topic/blink-dev/_0MEXs6TJhg) を発表している。
 

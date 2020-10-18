@@ -18,7 +18,7 @@ Ajax の発見により XHR の利用が増えて以降、 CORS が定義され�
 `<script>` タグは JS を取得するために GET を発生するが、異なる Origin を記述しても CORS の対象にはならない。これを利用して SOP を迂回する方法が JSONP だ。実際に JSONP を用いて、 CORS を使わずに Intra の情報を SNS で取得してみよう。
 
 
-### \<scirpt\>によるデータ連携
+### \<script\>によるデータ連携
 
 まず、 SNS に次のような HTML を設置する。
 
